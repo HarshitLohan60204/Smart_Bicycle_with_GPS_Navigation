@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+     <!-- Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+
+    <link rel="stylesheet" href="css.css">
+
+     <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.js"></script>
+
+
+    
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo"><a href="#">Map</a></div>
+        
+        <ul class="nav_list">
+            <li class="nav_link"><a href="Map.html">Home</a></li>
+            <li class="nav_link"><a href="#" id="location1">Stands</a></li>
+            <!-- <li class="nav_link"><a href="nearme.html">Near Me</a></li> -->
+        </ul>
+    </header>
+
+    <div id="map"></div>
+</body>
+<script src="map.js"></script>
+<script src="stand.js"></script>
+<script src="routing.js"></script>
+<script>
+
+var location1Anchor = document.getElementById("location1");
+
+// Add an event listener to handle the click event
+location1Anchor.addEventListener("click", function(event) {
+    // Prevent the default action (i.e., navigating to "#")
+    
+    // Set the map view to the desired coordinates and zoom level
+    map.setView([30.739885, 76.775166], 13);
+});
+
+
+// live location
+navigator.geolocation.watchPosition(success, error);
+function success(pos){
+
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var accuracy = pos.coords.accuracy;
+
+
+    var start = L.latLng(lat, lng);
+    var end = L.latLng(30.731775, 76.731383);
+
+// Routing
+var control = L.Routing.control({
+      waypoints: [
+        start,
+        end
+      ],
+
+      routeWhileDragging: false, // Disable dragging to prevent user interference
+        lineOptions: {
+            styles: [{color: 'dodgerblue', opacity: 0.7, weight: 5.5}]
+        }
+    }).addTo(map);
+
+// Removing previous path
+    map.eachLayer(function(layer) {
+      if (layer instanceof L.Polyline) {
+        map.removeLayer(layer);
+      }
+    });
+    
+// Remove previous marker
+    if(marker) {
+        map.removeLayer(marker);
+        map.removeLayer(circle);
+    }
+
+     marker = L.marker([lat, lng]).addTo(map);
+     circle = L.circle([lat, lng], {radius: accuracy/32 }).addTo(map);
+
+     if (!zoomed) {
+        zoomed=map.fitBounds(circle.getBounds());
+     }
+
+     map.setView([lat, lng]);
+
+}
+
+function error(err) {
+    if(err.code==1){
+        alert("Please Allow Geolocation Access:");
+    }else{
+        alert("Cannot Get the Location");
+    }
+}
+
+control.on('routesfound', function(e) {
+        e.routes.forEach(function(route) {
+            route.route.setWaypointsNoChange = function() {}; // Disabling editing
+        });
+    });
+
+</script>
+</html>

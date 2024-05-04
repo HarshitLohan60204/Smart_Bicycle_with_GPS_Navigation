@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+     <!-- Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-Ti8eKEP3gXpGgY3FfK9pCgHHV7TPXGtX2My6qJ7cEi1oN3bPdzBPPbpyKRsHfE9P3jD9fS3rplgzfHjXsUqQIQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="css.css">
+
+     <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.js"></script>
+
+
+    
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo"><a href="Map.html">PedalEase</a></div>
+        
+        <ul class="nav_list">
+            <li class="nav_link"><a href="Map.html">Home</a></li>
+            <li class="nav_link"><a href="#" id="location1">Stands</a></li>
+            <li class="nav_link"><a id="findNearest">Near me</a></li>
+            <li class="nav_link"><a href="About.html">About Us</a></li>
+            <li class="nav_link"><a href="feedback.html">Feedback</a></li>
+        </ul>
+        <div class="user-icon" onclick="toggleSidebar()">
+          <i class="fa fa-user"></i>
+        </div>
+      
+    </header>
+<div class="container">
+        <aside id="sidebar">
+          <section class="user-info">
+            <!-- Your user account details can go here -->
+            <h2>User Account</h2>
+            <p>Name: Harshit</p>
+            <p>Email: john@example.com</p>
+          </section>
+        </aside>
+    <div id="map"></div>
+</body>
+<script src="aside.js"></script>
+<script src="map.js"></script>
+<script src="stand.js"></script>
+<script>
+
+var location1Anchor = document.getElementById("location1");
+
+// Add an event listener to handle the click event
+location1Anchor.addEventListener("click", function(event) {
+    // Prevent the default action (i.e., navigating to "#")
+    
+    // Set the map view to the desired coordinates and zoom level
+    map.setView([30.739885, 76.775166], 13);
+});
+
+ 
+// live location
+navigator.geolocation.watchPosition(success, error);
+function success(pos){
+
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var accuracy = pos.coords.accuracy;
+
+    
+// Remove previous marker
+    if(marker) {
+        map.removeLayer(marker);
+        map.removeLayer(circle);
+    }
+
+     marker = L.marker([lat, lng]).addTo(map);
+     circle = L.circle([lat, lng], {radius: accuracy/32 }).addTo(map);
+
+     if (!zoomed) {
+        zoomed=map.fitBounds(circle.getBounds());
+     }
+
+     map.setView([lat, lng]);
+
+}
+
+function error(err) {
+    if(err.code==1){
+        alert("Please Allow Geolocation Access:");
+    }else{
+        alert("Cannot Get the Location");
+    }
+}
+
+var userMarker;
+    var nearestLocatorMarker;
+
+    var locators = [
+  { lat: 30.739775, lng: 76.775266, name: '' },
+  { lat: 30.752935, lng: 76.797310, name: '' },
+  {lat: 30.756726,lng: 76.786329, name: '' },
+  { lat: 30.731775,lng: 76.731383, name: ''},
+  {lat:30.690297,lng: 76.766545, name: ''},
+  {lat: 30.723506,lng: 76.807726,name: ''},
+  {lat: 30.725169,lng: 76.751189, name: ''}
+    ];
+
+
+    
+
+    document.getElementById('findNearest').addEventListener('click', function() {
+      // Get user's location using Geolocation API
+      navigator.geolocation.getCurrentPosition(function(position) {
+        var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+        // Remove existing markers
+        if (userMarker) map.removeLayer(userMarker);
+        if (nearestLocatorMarker) map.removeLayer(nearestLocatorMarker);
+
+        // Add marker for user's location
+        userMarker = L.marker(userLatLng).addTo(map).bindPopup("Your Location").openPopup();
+
+        // Find nearest locator
+        var nearestLocator = getNearestLocator(userLatLng, locators);
+
+        // Add marker for the nearest locator
+        nearestLocatorMarker = L.marker([nearestLocator.lat, nearestLocator.lng], {icon: L.icon({iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png', iconSize: [35, 55]})}).addTo(map).bindPopup(nearestLocator.name).openPopup();
+
+        // Add markers for other locators
+        for (var i = 0; i < locators.length; i++) {
+          if (locators[i] !== nearestLocator) {
+            L.marker([locators[i].lat, locators[i].lng]).addTo(map).bindPopup(locators[i].name);
+          }
+        }
+
+        // Update map view to center around the nearest locator
+        map.setView([nearestLocator.lat, nearestLocator.lng], 13);
+        console.log('Nearest locator:', nearestLocator);
+      });
+    });
+
+    // Function to find the nearest locator
+    function getNearestLocator(userLatLng, locators) {
+      var nearestDistance = Infinity;
+      var nearestLocator = null;
+
+      for (var i = 0; i < locators.length; i++) {
+        var locatorLatLng = L.latLng(locators[i].lat, locators[i].lng);
+        var distance = userLatLng.distanceTo(locatorLatLng);
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestLocator = locators[i];
+        }
+      }
+
+      return nearestLocator;
+    }
+
+    
+
+
+</script>
+</html>

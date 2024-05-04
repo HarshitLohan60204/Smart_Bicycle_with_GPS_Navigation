@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Nearest Locator</title>
+  <!-- Include Leaflet CSS and JavaScript -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="css.css">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="logo"><a href="#">Map</a></div>
+    
+    <ul class="nav_list">
+        <li class="nav_link"><a href="Map.html">Home</a></li>
+        <li class="nav_link"><a href="stands.html">Stands</a></li>
+       <li class="nav_link" ><a id="findNearest">Find Nearest Locator</a></li> 
+        <li class="nav_link"><a href="new.html">Start Journey</a></li>
+    </ul>
+     
+</header>
+
+
+ 
+  <div id="map" style="height: 100vh;"></div>
+  <script src="stand.js" ></script>
+  <script src="map.js"></script>ipt
+  <script>
+    
+    var userMarker;
+    var nearestLocatorMarker;
+
+    var locators = [
+  { lat: 30.739775, lng: 76.775266, name: '' },
+  { lat: 30.752935, lng: 76.797310, name: '' },
+  {lat: 30.756726,lng: 76.786329, name: '' },
+  { lat: 30.731775,lng: 76.731383, name: ''},
+  {lat:30.690297,lng: 76.766545, name: ''},
+  {lat: 30.723506,lng: 76.807726,name: ''},
+  {lat: 30.725169,lng: 76.751189, name: ''}
+    ];
+
+
+    
+
+    document.getElementById('findNearest').addEventListener('click', function() {
+      // Get user's location using Geolocation API
+      navigator.geolocation.getCurrentPosition(function(position) {
+        var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+        // Remove existing markers
+        if (userMarker) map.removeLayer(userMarker);
+        if (nearestLocatorMarker) map.removeLayer(nearestLocatorMarker);
+
+        // Add marker for user's location
+        userMarker = L.marker(userLatLng).addTo(map).bindPopup("Your Location").openPopup();
+
+        // Find nearest locator
+        var nearestLocator = getNearestLocator(userLatLng, locators);
+
+        // Add marker for the nearest locator
+        nearestLocatorMarker = L.marker([nearestLocator.lat, nearestLocator.lng], {icon: L.icon({iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png', iconSize: [35, 55]})}).addTo(map).bindPopup(nearestLocator.name).openPopup();
+
+        // Add markers for other locators
+        for (var i = 0; i < locators.length; i++) {
+          if (locators[i] !== nearestLocator) {
+            L.marker([locators[i].lat, locators[i].lng]).addTo(map).bindPopup(locators[i].name);
+          }
+        }
+
+        // Update map view to center around the nearest locator
+        map.setView([nearestLocator.lat, nearestLocator.lng], 13);
+        console.log('Nearest locator:', nearestLocator);
+      });
+    });
+
+    // Function to find the nearest locator
+    function getNearestLocator(userLatLng, locators) {
+      var nearestDistance = Infinity;
+      var nearestLocator = null;
+
+      for (var i = 0; i < locators.length; i++) {
+        var locatorLatLng = L.latLng(locators[i].lat, locators[i].lng);
+        var distance = userLatLng.distanceTo(locatorLatLng);
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestLocator = locators[i];
+        }
+      }
+
+      return nearestLocator;
+    }
+  </script>
+</body>
+</html>
